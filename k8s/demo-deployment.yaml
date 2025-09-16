@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-metrics
+  namespace: apps
+  labels:
+    app: demo-metrics
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-metrics
+  template:
+    metadata:
+      labels:
+        app: demo-metrics
+    spec:
+      containers:
+        - name: app
+          image: demo-metrics:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http

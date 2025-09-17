@@ -1,5 +1,8 @@
 # From repo root
 # 1) Build and load image into Minikube's Docker daemon
+cd app
+mvn -U -DskipTests clean package
+cd ..
 minikube image build -t demo-metrics:latest ./app
 
 

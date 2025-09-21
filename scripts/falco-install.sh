@@ -32,6 +32,12 @@ helm upgrade --install falco-exporter falcosecurity/falco-exporter \
   --set serviceMonitor.enabled=true \
   --set prometheusRules.enabled=true
 
+# ---- install Falcosidekick
+helm upgrade --install falcosidekick falcosecurity/falcosidekick \
+  -n falco -f scripts/falcosidekick-values.yaml --reset-values
+
+
+kubectl label service falco-metrics app.kubernetes.io/component=metrics --namespace falco
 # --- sanity checks ---
 kubectl -n falco get pods -o wide
 kubectl -n falco logs deploy/falco --tail=50 || true

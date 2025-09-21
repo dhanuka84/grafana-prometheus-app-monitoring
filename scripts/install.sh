@@ -46,15 +46,6 @@ data:
           maxLines: 1000
 YAML
 
-#install falco and falcosidekick
-
-helm upgrade --install falco falcosecurity/falco -n falco -f scripts/falco-values.yaml
-
-helm upgrade --install falcosidekick falcosecurity/falcosidekick \
-  -n falco -f scripts/falcosidekick-values.yaml --reset-values
-
-
-kubectl label service falco-metrics app.kubernetes.io/component=metrics --namespace falco
 kubectl rollout status deployment "$RELEASE-grafana" -n "$NAMESPACE" --timeout=5m || true
 kubectl rollout status statefulset "$RELEASE-kube-prometheus-stack-prometheus" -n "$NAMESPACE" --timeout=5m || true
 

@@ -1,0 +1,30 @@
+# This policy allows Prometheus to scrape metrics from Falco.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-to-scrape-falco
+  # IMPORTANT: Apply this policy in the namespace where Falco is installed.
+  namespace: falco
+spec:
+  # Apply this policy to all Falco pods
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: falco
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow ingress traffic FROM the Prometheus pods...
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              # This label is commonly on the 'monitoring' namespace.
+              # Verify this label exists on your monitoring namespace with `kubectl get ns --show-labels`
+              name: monitoring
+          podSelector:
+            matchLabels:
+              # This label is on the Prometheus pods managed by the kube-prometheus-stack
+              app.kubernetes.io/name: prometheus
+      # ...TO the Falco metrics port.
+      ports:
+        - protocol: TCP
+          port: 9376

@@ -1,0 +1,35 @@
+replicaCount: 1
+
+service:
+  type: ClusterIP
+  port: 2801
+
+config:
+  # --- THIS IS THE FIX ---
+  # Enable deduplication to suppress alert bursts.
+  # It will ignore identical events that arrive within the specified duration.
+  deduplication:
+    enabled: true
+    duration: 5s # You can adjust this window; 5s is a good starting point.
+  # Loki output
+  loki:
+    hostPort: http://loki.monitoring.svc.cluster.local:3100
+    endpoint: /loki/api/v1/push
+    minimumPriority: warning        # change to notice/warning if you want fewer logs
+    labels:
+      - rule
+      - priority
+      - source
+      - hostname
+      - k8s_ns_name
+      - k8s_pod_name
+      - proc_name
+    extraLabels:
+      source: falco
+
+  # Optional: enrich events with cluster info
+  customfields:
+    cluster: minikube
+
+webui:
+  enabled: true       # small UI to view events at http://svc:2802

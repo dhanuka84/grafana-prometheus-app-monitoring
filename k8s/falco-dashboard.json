@@ -1,0 +1,32 @@
+ {
+      "id": null,
+      "title": "Falco — Events Overview",
+      "tags": ["falco", "security"],
+      "timezone": "browser",
+      "schemaVersion": 38,
+      "version": 1,
+      "panels": [
+        {
+          "type": "timeseries",
+          "title": "Falco Events Rate",
+          "targets": [
+            {
+              "expr": "rate(falco_events[5m])",
+              "legendFormat": "{{rule}}"
+            }
+          ],
+          "gridPos": { "x": 0, "y": 0, "w": 24, "h": 8 }
+        },
+        {
+          "type": "table",
+          "title": "Top Falco Rules",
+          "targets": [
+            {
+              "expr": "sum by (rule) (increase(falco_events[5m]))",
+              "format": "table"
+            }
+          ],
+          "gridPos": { "x": 0, "y": 8, "w": 24, "h": 8 }
+        }
+      ]
+}

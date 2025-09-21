@@ -101,3 +101,89 @@ minikube delete
 - Explore custom metrics and HPA demos
 
 ---
+kubectl label service falco-metrics app.kubernetes.io/component=metrics --namespace falco
+
+---
+
+$ helm upgrade --install loki grafana/loki \
+  -n monitoring \
+  -f loki-values.yaml \
+  --set loki.useTestSchema=true \
+  --reset-values
+
+---
+
+$ cat <<'YAML' | kubectl apply -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: loki-datasource
+  namespace: monitoring
+  labels:
+    grafana_datasource: "1"
+    release: monitoring        # <-- must match your kube-prometheus-stack release label
+data:
+  loki.yaml: |
+    apiVersion: 1
+    datasources:
+      - name: Loki
+        type: loki
+        access: proxy
+        url: http://loki.monitoring.svc.cluster.local:3100
+        isDefault: false
+        jsonData:
+          maxLines: 1000
+YAML
+
+
+configmap/loki-datasource created
+
+---
+
+$ helm upgrade --install falco falcosecurity/falco -n falco -f scripts/falco-values.yaml
+
+---
+
+$ cat <<'YAML' > falcosidekick-values.yaml
+replicaCount: 1
+
+service:
+  type: ClusterIP
+  port: 2801
+
+config:
+  # Loki output
+  loki:
+    hostPort: http://loki.monitoring.svc.cluster.local:3100
+    endpoint: /loki/api/v1/push
+    minimumPriority: debug        # change to notice/warning if you want fewer logs
+    extraLabels:
+      source: falco
+
+  # Optional: enrich events with cluster info
+  customfields:
+    cluster: minikube
+
+webui:
+  enabled: true       # small UI to view events at http://svc:2802
+YAML
+
+helm upgrade --install falcosidekick falcosecurity/falcosidekick \
+  -n falco -f scripts/falcosidekick-values.yaml --reset-values
+
+---
+
+
+kubectl -n falco run testbox --image=busybox:1.36 --restart=Never -it -- sh
+# inside the pod:
+echo hi > /etc/evil             # write below /etc (likely blocked but enough to trigger)
+cat /etc/shadow || true         # read sensitive file
+nc 1.2.3.4 4444 || true         # reverse shell-esque connection
+exit
+
+
+---
+
+Troubleshooting loki
+# Previous container logs usually show the parse/validation error + line number
+$ kubectl -n monitoring logs loki-0 -c loki --previous | tail -n +1

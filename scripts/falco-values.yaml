@@ -1,0 +1,69 @@
+# Recommended falco-values.yaml for Kubernetes with Prometheus Operator
+
+# Driver configuration - modern_ebpf is the recommended choice for modern kernels.
+driver:
+  kind: modern_ebpf
+
+# Core Falco engine settings
+falco:
+  # Output events in JSON format.
+  json_output: true
+
+  http_output:
+    enabled: true
+    url: http://falcosidekick.falco.svc.cluster.local:2801/
+
+  # Enable the gRPC server for tools like Falcosidekick.
+  grpc:
+    enabled: true
+  grpc_output:
+    enabled: false
+
+  # --- This is the definitive application-level fix ---
+  # This block enables the Prometheus metrics endpoint inside the Falco application.
+  metrics:
+    enabled: true
+
+  # Enable the webserver for health checks (e.g., Kubernetes liveness/readiness probes).
+  webserver:
+    enabled: true
+    prometheus_metrics_enabled: true
+    listen_port: 8765
+
+# This key tells Helm to load the custom rules defined below.
+# The content will be placed in a ConfigMap and loaded by Falco.
+customRules:
+  custom-rules.yaml: |-
+    - rule: Detect ls in container dhanuka
+      desc: An ls command was run inside a container. This is for testing custom rules.
+      condition: container.id != host and proc.name = ls
+      output: "ls command executed in a container (user=%user.name container_id=%container.id container_name=%container.name proc.cmdline=%proc.cmdline)"
+      priority: WARNING
+      source: syscall
+
+# --- Kubernetes Integration for Prometheus ---
+# This section creates the Kubernetes resources needed for Prometheus to discover Falco.
+metrics:
+  # This top-level key enables the creation of the Service and ServiceMonitor.
+  enabled: true
+  labels:
+      app.kubernetes.io/component: metrics
+  service:
+    port: 9376
+
+  serviceMonitor:
+    enabled: true
+    # Create the ServiceMonitor in the 'monitoring' namespace where the Prometheus Operator is watching.
+    namespace: monitoring
+    # This label is crucial for discovery by the kube-prometheus-stack.
+    labels:
+      release: prometheus
+    # Customize scrape timing.
+    interval: 15s
+    scrapeTimeout: 10s
+
+  prometheusRule:
+    enabled: true
+
+# kubectl label service falco-metrics app.kubernetes.io/component=metrics --namespace falco
+

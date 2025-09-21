@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    meta.helm.sh/release-name: falco
+    meta.helm.sh/release-namespace: falco
+  labels:
+    app.kubernetes.io/component: metrics
+    app.kubernetes.io/instance: falco
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: falco
+    app.kubernetes.io/version: 0.41.3
+    helm.sh/chart: falco-6.2.5
+    type: falco-metrics
+  name: falco-metrics
+  namespace: falco
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+  - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+  - name: metrics
+    port: 9376
+    protocol: TCP
+    targetPort: 9376
+  selector:
+    app.kubernetes.io/instance: falco
+    app.kubernetes.io/name: falco
+  sessionAffinity: None
+  type: ClusterIP
+status:
+  loadBalancer: {}

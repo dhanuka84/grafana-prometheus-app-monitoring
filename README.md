@@ -187,3 +187,6 @@ exit
 Troubleshooting loki
 # Previous container logs usually show the parse/validation error + line number
 $ kubectl -n monitoring logs loki-0 -c loki --previous | tail -n +1
+
+# falco container logs
+$ kubectl -n falco logs ds/falco -c falco -f
